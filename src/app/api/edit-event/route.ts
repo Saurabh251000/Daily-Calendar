@@ -2,12 +2,14 @@ import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   await dbConnect();
 
   try {
     const { username, event } = await request.json();
-    const { id, title, start, end } = event; 
+    const { _id, title, start, end } = event; 
+
+    console.log("Id of events to be update : ", _id);
 
     // Find the user 
     const user = await UserModel.findOne({ username });
@@ -20,7 +22,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Find the event 
-    const eventIndex = user.events.findIndex((e) => e.id === id);
+    console.log("User Events : ",user.events);
+    
+    const eventIndex = user.events.findIndex((e) => e._id?.toString() === _id);
 
     if (eventIndex === -1) {
       return NextResponse.json(

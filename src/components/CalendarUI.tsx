@@ -1,18 +1,38 @@
 "use client"
 import React from 'react'
-import { useState } from 'react'
-import { Calendar, dateFnsLocalizer, Event } from 'react-big-calendar'
-import withDragAndDrop, { withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
-import { enUS } from 'date-fns/locale'
+import { useState, useEffect } from 'react'
+import { Calendar, momentLocalizer} from 'react-big-calendar'
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
+// import { format, parse, startOfWeek, getDay } from 'date-fns'
+// import { enUS } from 'date-fns/locale'
 import AddEvent from './AddEvent'
 import EditEvent from './EditEvent'
-import { CustomAgendaEventProps } from '@/interface'
+import { deleteEventAPI, getEventAPI, editEventAPI } from '@/ApiCall'
+import { CustomEvent, CustomDnDProps, CustomAgendaEventProps } from '@/interface'
+import { useUser } from '@clerk/nextjs';
 
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
+// import {  } from 'react-big-calendar';
+import moment from 'moment';
+
+const localizer = momentLocalizer(moment);
+
+
 const DnDCalendar = withDragAndDrop(Calendar)
+
+// const locales = {
+//   'en-US': enUS,
+// }
+
+// const localizer = dateFnsLocalizer({
+//   format,
+//   parse,
+//   startOfWeek,
+//   getDay,
+//   locales,
+// });
 
 const CustomAgendaEvent = ({ event, onEdit, onDelete } : CustomAgendaEventProps) => (
   <span className='flex justify-between flex-wrap gap-2'>
@@ -25,45 +45,88 @@ const CustomAgendaEvent = ({ event, onEdit, onDelete } : CustomAgendaEventProps)
 )
 
 export const CalendarUI = () => {
-  const [events, setEvents] = useState<Event[]>([])
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [events, setEvents] = useState<CustomEvent[]>([])
+  const [selectedEvent, setSelectedEvent] = useState<CustomEvent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { user,isLoaded } =  useUser(); 
+  const username = user?.username; 
 
-  const onEventResize: withDragAndDropProps['onEventResize'] = data => {
+// Get Event
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (username) {
+        const fetchedEvents = await getEventAPI(username);
+        if (fetchedEvents) {
+          // console.log(fetchedEvents.events); ---> events
+          setEvents(fetchedEvents.events);
+        } else {
+          console.error('Failed to load events');
+        }
+      }
+    };
+    fetchEvents();
+  }, [username]);
+
+  if (!isLoaded || loading) {
+    return <div className='text-white text-xl'>Loading...</div>; 
+  }
+
+// Resize Event
+  const onEventResize: CustomDnDProps['onEventResize'] = async(data) => {
     const { start, end, event } = data
+    setLoading(true)
+    const response = await editEventAPI({
+      username,
+      event: { _id: event._id, title: event.title , start: moment(start).toDate(), end: moment(end).toDate()  },
+    });
+
+    console.log("Resize Event Updated",  response);
+  
+    setLoading(false)
+
     setEvents(currentEvents =>
       currentEvents.map(e =>
         e.start === event.start ? { ...e, start: new Date(start), end: new Date(end) } : e
-      ) as Event[]
+      ) as CustomEvent[]
     )
   }
 
-  const onEventDrop: withDragAndDropProps['onEventDrop'] = data => {
+  // Drag and Drop Event
+  const onEventDrop: CustomDnDProps['onEventDrop'] = async(data) => {
     const { start, end, event } = data
+
+    setLoading(true)
+    const response = await editEventAPI({
+      username,
+      event: { _id: event._id, title: event.title , start: moment(start).toDate(), end: moment(end).toDate()  },
+    });
+
+    console.log("Resize Event Updated",  response);
+    setLoading(false)
+
     setEvents(currentEvents =>
       currentEvents.map(e =>
         e.title === event.title ? { ...e, start: new Date(start), end: new Date(end) } : e
-      ) as Event[]
+      ) as CustomEvent[]
     )
   }
 
-  const addEvent = (title: string, start: Date, end: Date) => {
+  // Add New Event
+  const addEvent = (event:CustomEvent) => {
     setEvents([
-      ...events,
-      {
-        title,
-        start,
-        end,
-      },
+      ...events, event,
     ])
   }
 
-  const editEvent = (event: Event) => {
+  // Edit Event --> IT ensure edit component is visible or not
+  const editEvent = (event: CustomEvent) => {
     setSelectedEvent(event);
     setIsEditing(true);
   };
 
-  const updateEvent = (updatedEvent: Event) => {
+  // Update edited event
+  const updateEvent = (updatedEvent: CustomEvent) => {
     setEvents(events.map(e => e.title === selectedEvent?.title ? updatedEvent : e));
     setIsEditing(false);
     setSelectedEvent(null);
@@ -73,17 +136,28 @@ export const CalendarUI = () => {
     setSelectedEvent(null);
   };
 
-  const deleteEvent = (event:Event) => {
+  // Delete Event
+  const deleteEvent = async (event: CustomEvent) => {
+    if (!event._id) {
+      console.error("Event ID is missing or undefined");
+      return;  
+    }
+    const deletedEvent = await deleteEventAPI({username: username ?? '', id: event._id});
+    if (deletedEvent) {
+      setEvents(events.filter(e => e._id !== event._id));
+    } else {
+      console.error('Error deleting event');
+    }
+  };
 
-    setEvents(events.filter(e => e.title !== event.title))
-  }
+
 
   return (
     <div className="flex flex-col lg:flex-row gap-10 px-4 sm:px-6 lg:px-10">
       <div className="w-full lg:w-1/4">
         {isEditing ? (
           selectedEvent && (
-            <EditEvent event={selectedEvent} onUpdateEvent={updateEvent} onCancel={cancelEdit} />
+            <EditEvent username={username}  event={selectedEvent} onUpdateEvent={updateEvent} onCancel={cancelEdit} />
           )
         ) : (
           <AddEvent onAddEvent={addEvent} />
@@ -95,7 +169,7 @@ export const CalendarUI = () => {
         <DnDCalendar
           className="w-full"
           selectable
-          defaultView='month'
+          defaultView='agenda'
           views={['month', 'agenda']}
           events={events}
           localizer={localizer}
@@ -161,14 +235,6 @@ export const CalendarUI = () => {
   )
 }
 
-const locales = {
-  'en-US': enUS,
-}
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-})
+
+

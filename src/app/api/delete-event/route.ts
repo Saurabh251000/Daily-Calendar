@@ -7,7 +7,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
 
-    const { username, eventId } = await request.json();
+    const { username, id } = await request.json();
 
     // Find the user 
     const user = await UserModel.findOne({ username });
@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Find the event 
-    const eventIndex = user.events.findIndex((e) => e.id === eventId);
+    const eventIndex = user.events.findIndex((e) => e.id === id);
 
     if (eventIndex === -1) {
       return NextResponse.json(

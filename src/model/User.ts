@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { Event } from 'react-big-calendar';
+// import { Event } from 'react-big-calendar';
+import { CustomEvent } from '@/interface';
 
-const EventSchema: Schema<Event> = new mongoose.Schema({
+const EventSchema: Schema<CustomEvent> = new mongoose.Schema({
   title: {
     type: String,
     required: true,
@@ -18,7 +19,7 @@ const EventSchema: Schema<Event> = new mongoose.Schema({
 
 export interface User extends Document {
   username: string;
-  events: Event[];
+  events: CustomEvent[];
 }
 
 const UserSchema: Schema<User> = new mongoose.Schema({

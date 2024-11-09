@@ -1,14 +1,22 @@
 "use client";
 import { useState } from 'react';
 import { AddEventProps } from '@/interface';
+import { AddEventAPI } from '@/ApiCall';
+import { useUser } from '@clerk/nextjs';
 
-const AddEvent = ({ onAddEvent, username }: AddEventProps & { username: string }) => {
+const AddEvent = ({ onAddEvent}: AddEventProps ) => {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState<string>('06:00');
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [endTime, setEndTime] = useState<string>('23:00');
+  const { user, isLoaded } = useUser(); 
 
+  if (!isLoaded) {
+    return <div className='text-white text-xl'>Loading...</div>; 
+  }
+  const username = user?.username; 
+  
   const getStartDateTime = (date: string, time: string): Date => {
     const [hours, minutes] = time.split(':').map(Number);
     const newStartDate = new Date(date);
@@ -27,38 +35,33 @@ const AddEvent = ({ onAddEvent, username }: AddEventProps & { username: string }
     if (title && startTime && endTime) {
       const startDateTime = getStartDateTime(startDate, startTime);
       const endDateTime = getEndDateTime(endDate, endTime);
-
+  
       if (startDateTime < endDateTime) {
         const event = {
           title,
           start: startDateTime,
           end: endDateTime,
         };
-
+  
         try {
-
-          // Call  API to add the event
-          const response = await fetch('/api/add-event', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, event }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            onAddEvent(title, startDateTime, endDateTime); 
+          // Call API 
+          if(!username){
+            return alert("Something went wrong")
+          }
+          const data = await AddEventAPI({ username, event });
+  
+          if (data) {
+            onAddEvent(data.event);
             alert(data.message); 
-
+  
+            // Reset form fields 
             setTitle('');
             setStartDate(new Date().toISOString().split('T')[0]);
             setStartTime('09:00');
             setEndDate(new Date().toISOString().split('T')[0]);
             setEndTime('10:00');
           } else {
-            const errorData = await response.json();
-            alert(`Error: ${errorData.message}`);
+            alert('Error: Error on add event');
           }
         } catch (error) {
           console.error('Error adding event:', error);
@@ -67,6 +70,8 @@ const AddEvent = ({ onAddEvent, username }: AddEventProps & { username: string }
       } else {
         alert('End time must be after start time.');
       }
+    } else {
+      alert('Please fill in all fields.');
     }
   };
 

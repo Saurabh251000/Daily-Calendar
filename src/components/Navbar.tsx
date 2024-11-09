@@ -20,6 +20,14 @@ export const Navbar = async () => {
             <li className="hover:text-gray-400">Home</li>
           </Link>
 
+          {/* { isAuth && <>
+            <Link href="/user-profile">
+                <li className="hover:text-gray-400">Profile</li>
+              </Link>
+              <li><UserButton /></li>
+          </>
+          } */}
+
           {!isAuth ? (
             <>
               <Link href="/sign-in">

@@ -6,33 +6,37 @@ export async function POST(request: NextRequest) {
   await dbConnect();
 
   try {
- 
     const { username, event } = await request.json();
 
-    // Find the user 
-    const user = await UserModel.findOne({ username });
+    // Find the user
+    let user = await UserModel.findOne({ username });
 
     if (!user) {
-      return new NextResponse(
-        JSON.stringify({ message: 'User not found', success: false }),
-        { status: 404 }
-      );
+      user = new UserModel({
+        username,
+        events: [event],
+      });
+    } else {
+      user.events.push(event);
     }
 
-    // Add event 
-    user.events.push(event);
+    // Save the updated user
+    const updatedUser = await user.save();
 
-    // Save 
-    await user.save();
+    const addedEvent = updatedUser.events[updatedUser.events.length - 1];
 
-    return new NextResponse(
-      JSON.stringify({ message: 'Event added successfully', success: true }),
+    return NextResponse.json(
+      {
+        message: 'Event added successfully',
+        success: true,
+        event: addedEvent, 
+      },
       { status: 200 }
     );
   } catch (error) {
     console.error('An unexpected error occurred:', error);
-    return new NextResponse(
-      JSON.stringify({ message: 'Internal server error', success: false }),
+    return NextResponse.json(
+      { message: 'Internal server error', success: false },
       { status: 500 }
     );
   }
