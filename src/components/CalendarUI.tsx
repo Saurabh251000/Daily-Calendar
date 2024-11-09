@@ -50,7 +50,7 @@ export const CalendarUI = () => {
   const [events, setEvents] = useState<CustomEvent[]>([])
   const [selectedEvent, setSelectedEvent] = useState<CustomEvent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const { user,isLoaded } =  useUser(); 
   const username = user?.username; 
 
@@ -70,14 +70,14 @@ export const CalendarUI = () => {
     fetchEvents();
   }, [username]);
 
-  if (!isLoaded || loading) {
+  if (!isLoaded ) {
     return <div className='text-white text-xl'>Loading...</div>; 
   }
 
 // Resize Event
   const onEventResize: CustomDnDProps['onEventResize'] = async(data) => {
     const { start, end, event } = data
-    setLoading(true)
+    // setLoading(true)
     const response = await editEventAPI({
       username,
       event: { _id: event._id, title: event.title , start: moment(start).toDate(), end: moment(end).toDate()  },
@@ -85,7 +85,7 @@ export const CalendarUI = () => {
 
     console.log("Resize Event Updated",  response);
   
-    setLoading(false)
+    // setLoading(false)
 
     setEvents(currentEvents =>
       currentEvents.map(e =>
@@ -98,14 +98,14 @@ export const CalendarUI = () => {
   const onEventDrop: CustomDnDProps['onEventDrop'] = async(data) => {
     const { start, end, event } = data
 
-    setLoading(true)
+    // setLoading(true)
     const response = await editEventAPI({
       username,
       event: { _id: event._id, title: event.title , start: moment(start).toDate(), end: moment(end).toDate()  },
     });
 
     console.log("Resize Event Updated",  response);
-    setLoading(false)
+    // setLoading(false)
 
     setEvents(currentEvents =>
       currentEvents.map(e =>
