@@ -1,18 +1,14 @@
-"use client"
+"use client";
 import { useState } from 'react';
+import { AddEventProps } from '@/interface';
 
-type AddEventProps = {
-  onAddEvent: (title: string, start: Date, end: Date) => void;
-};
-
-const AddEvent = ({ onAddEvent }: AddEventProps) => {
+const AddEvent = ({ onAddEvent, username }: AddEventProps & { username: string }) => {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState<string>('06:00');
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [endTime, setEndTime] = useState<string>('23:00');
 
-  //
   const getStartDateTime = (date: string, time: string): Date => {
     const [hours, minutes] = time.split(':').map(Number);
     const newStartDate = new Date(date);
@@ -27,18 +23,47 @@ const AddEvent = ({ onAddEvent }: AddEventProps) => {
     return newEndDate;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (title && startTime && endTime) {
       const startDateTime = getStartDateTime(startDate, startTime);
       const endDateTime = getEndDateTime(endDate, endTime);
 
       if (startDateTime < endDateTime) {
-        onAddEvent(title, startDateTime, endDateTime);
-        setTitle('');
-        setStartDate(new Date().toISOString().split('T')[0]);
-        setStartTime('09:00');
-        setEndDate(new Date().toISOString().split('T')[0]);
-        setEndTime('10:00');
+        const event = {
+          title,
+          start: startDateTime,
+          end: endDateTime,
+        };
+
+        try {
+
+          // Call  API to add the event
+          const response = await fetch('/api/add-event', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, event }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            onAddEvent(title, startDateTime, endDateTime); 
+            alert(data.message); 
+
+            setTitle('');
+            setStartDate(new Date().toISOString().split('T')[0]);
+            setStartTime('09:00');
+            setEndDate(new Date().toISOString().split('T')[0]);
+            setEndTime('10:00');
+          } else {
+            const errorData = await response.json();
+            alert(`Error: ${errorData.message}`);
+          }
+        } catch (error) {
+          console.error('Error adding event:', error);
+          alert('An error occurred while adding the event.');
+        }
       } else {
         alert('End time must be after start time.');
       }
@@ -46,7 +71,7 @@ const AddEvent = ({ onAddEvent }: AddEventProps) => {
   };
 
   return (
-    <div className="shadow-md rounded-lg  my-4">
+    <div className="shadow-md rounded-lg my-4">
       <h3 className="text-xl font-semibold mb-4 text-white">Add New Event</h3>
       <div className="space-y-4">
         <div>
@@ -57,7 +82,7 @@ const AddEvent = ({ onAddEvent }: AddEventProps) => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter event title"
-            className="mt-2 p-2 w-full border border-gray-300  background-none rounded-md"
+            className="mt-2 p-2 w-full border border-gray-300 background-none rounded-md"
           />
         </div>
         <div>
