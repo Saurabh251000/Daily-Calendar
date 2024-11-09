@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { username, event } = await request.json();
     const { _id, title, start, end } = event; 
 
-    console.log("Id of events to be update : ", _id);
+    // console.log("Id of events to be update : ", _id);
 
     // Find the user 
     const user = await UserModel.findOne({ username });
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the event 
-    console.log("User Events : ",user.events);
+    // console.log("User Events : ",user.events);
     
     const eventIndex = user.events.findIndex((e) => e._id?.toString() === _id);
 

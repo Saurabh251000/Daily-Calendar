@@ -5,7 +5,7 @@ import { NextResponse,NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {
   const { username} = await request.json();
-  console.log(username);
+  // console.log(username);
   
   await dbConnect();
   try {

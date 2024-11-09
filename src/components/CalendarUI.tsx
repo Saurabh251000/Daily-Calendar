@@ -13,6 +13,8 @@ import { useUser } from '@clerk/nextjs';
 
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+// import 'react-big-calendar/lib/css/react-big-calendar.css';
+
 
 // import {  } from 'react-big-calendar';
 import moment from 'moment';
@@ -169,7 +171,7 @@ export const CalendarUI = () => {
         <DnDCalendar
           className="w-full"
           selectable
-          defaultView='agenda'
+          defaultView='month'
           views={['month', 'agenda']}
           events={events}
           localizer={localizer}
@@ -228,7 +230,7 @@ export const CalendarUI = () => {
                 </div>
               </div>
             ),
-          }}
+          }}          
         />
       </div>
     </div>
