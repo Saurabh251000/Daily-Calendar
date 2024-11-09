@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Find the event 
-    const eventIndex = user.events.findIndex((e) => e.id === id);
+    const eventIndex = user.events.findIndex((e) => e._id === id);
 
     if (eventIndex === -1) {
       return NextResponse.json(
